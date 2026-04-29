@@ -118,22 +118,29 @@ export default function RequestPage() {
     }));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const subject = encodeURIComponent(
-      `New Sibley Ventures Request: ${selectedService}`
-    );
+    const formData = new FormData();
+
+    formData.append("name", name);
+    formData.append("contact", contact);
+    formData.append("bestTime", bestTime);
+    formData.append("service", selectedService);
 
     const serviceQuestionDetails = serviceQuestions
-      .map((question) => `${question}\n${serviceAnswers[question] || "No answer provided"}`)
-      .join("\n\n");
+      .map((question) => `${question}: ${serviceAnswers[question] || "No answer provided"}`)
+      .join("\n");
 
-    const body = encodeURIComponent(
-      `Selected Service: ${selectedService}\n\nName: ${name}\nEmail or Phone: ${contact}\nBest Time to Contact: ${bestTime}\n\nService-Specific Answers:\n${serviceQuestionDetails}\n\nAdditional Details:\n${details}\n\nRemote Support Needed: Yes\n`
-    );
+    formData.append("serviceQuestions", serviceQuestionDetails);
+    formData.append("details", details);
 
-    window.location.href = `mailto:support@sibleyventuresllc.com?subject=${subject}&body=${body}`;
+    await fetch("https://formspree.io/f/xdayqpwe", {
+      method: "POST",
+      body: formData,
+    });
+
+    window.location.href = "/thank-you";
   }
 
   return (
