@@ -9,6 +9,7 @@ export default function RequestPage() {
   const [bestTime, setBestTime] = useState("");
   const [details, setDetails] = useState("");
   const [serviceAnswers, setServiceAnswers] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -121,26 +122,45 @@ export default function RequestPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const formData = new FormData();
+    if (isSubmitting) return;
 
+    setIsSubmitting(true);
+
+    const serviceQuestionDetails = serviceQuestions
+      .map((question) => `${question}: ${serviceAnswers[question] || "No answer provided"}`)
+      .join("\n\n");
+
+    const formData = new FormData();
+    formData.append("_subject", `New Sibley Ventures Request: ${selectedService}`);
     formData.append("name", name);
     formData.append("contact", contact);
     formData.append("bestTime", bestTime);
     formData.append("service", selectedService);
-
-    const serviceQuestionDetails = serviceQuestions
-      .map((question) => `${question}: ${serviceAnswers[question] || "No answer provided"}`)
-      .join("\n");
-
     formData.append("serviceQuestions", serviceQuestionDetails);
-    formData.append("details", details);
+    formData.append("details", details || "No additional details provided");
 
-    await fetch("https://formspree.io/f/xdayqpwe", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const response = await fetch("https://formspree.io/f/xdayqpwe", {
+        method: "POST",
+        body: formData,
+        headers: {
+          Accept: "application/json",
+        },
+      });
 
-    window.location.href = "/thank-you";
+      if (!response.ok) {
+        console.error("Formspree submission failed", await response.text());
+        alert("The form did not submit. Please try again or email support@sibleyventuresllc.com.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      window.location.href = "/thank-you";
+    } catch (error) {
+      console.error("Request submission error", error);
+      alert("The form did not submit. Please check your connection and try again.");
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -221,9 +241,10 @@ export default function RequestPage() {
 
           <button
             type="submit"
-            className="block w-full rounded-md bg-[#d4af37] px-6 py-4 text-center text-base font-bold text-black hover:bg-[#f3d675] active:bg-[#f3d675] sm:text-lg"
+            disabled={isSubmitting}
+            className="block w-full rounded-md bg-[#d4af37] px-6 py-4 text-center text-base font-bold text-black hover:bg-[#f3d675] active:bg-[#f3d675] disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg"
           >
-            Submit Request
+            {isSubmitting ? "Submitting..." : "Submit Request"}
           </button>
         </form>
       </section>
