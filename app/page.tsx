@@ -271,31 +271,40 @@ export default function Home() {
                       Fill out the form below and Sibley Ventures LLC will follow up with next steps.
                     </p>
 
-                    <div className="mt-7 space-y-4 text-left">
+                    <form
+                      onSubmit={handleSubmit}
+                      className="mt-7 space-y-4 text-left"
+                    >
                       <input
+                        name="name"
                         className="w-full rounded-md border border-[#d4af37]/50 bg-white px-4 py-4 text-gray-900 outline-none focus:border-[#d4af37]"
                         placeholder="Name"
+                        required
                       />
                       <input
+                        name="contact"
                         className="w-full rounded-md border border-[#d4af37]/50 bg-white px-4 py-4 text-gray-900 outline-none focus:border-[#d4af37]"
                         placeholder="Email or phone number"
+                        required
+                      />
+                      <input
+                        type="hidden"
+                        name="service"
+                        value={selectedService}
                       />
                       <textarea
+                        name="details"
                         className="min-h-28 w-full rounded-md border border-[#d4af37]/50 bg-white px-4 py-4 text-gray-900 outline-none focus:border-[#d4af37]"
                         placeholder="Describe what you need help with. Include device type, software, error messages, urgency, or what you want built."
+                        required
                       />
-
-                      <a
-                        href={`mailto:support@sibleyventuresllc.com?subject=${encodeURIComponent(
-                          `New Sibley Ventures Request: ${selectedService}`
-                        )}&body=${encodeURIComponent(
-                          `Selected Service: ${selectedService}\n\nName:\nEmail or Phone:\nBest Time to Contact:\nIssue or Request Details:\nRemote Support Needed: Yes/No\n`
-                        )}`}
-                        className="block rounded-md bg-[#d4af37] px-6 py-4 text-center text-lg font-bold text-black hover:bg-[#f3d675]"
+                      <button
+                        type="submit"
+                        className="block w-full rounded-md bg-[#d4af37] px-6 py-4 text-center text-lg font-bold text-black hover:bg-[#f3d675]"
                       >
                         Submit Request
-                      </a>
-                    </div>
+                      </button>
+                    </form>
 
                     <p className="mt-5 text-xs text-gray-600">
                       Manual payments accepted through PayPal, Zelle, Cash App, or invoice after service confirmation.
@@ -622,4 +631,29 @@ export default function Home() {
       )}
     </main>
   );
+}
+// Handles request form submission
+async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+
+  const formData = new FormData(event.currentTarget);
+
+  const payload = {
+    _subject: `New Sibley Ventures Request`,
+    name: formData.get("name"),
+    contact: formData.get("contact"),
+    service: formData.get("service"),
+    details: formData.get("details"),
+  };
+
+  await fetch("https://formsubmit.co/ajax/sibley@sibleyventuresllc.com", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  window.location.href = "/thank-you";
 }
